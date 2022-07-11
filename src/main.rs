@@ -3,21 +3,11 @@ mod processor;
 use std::{env, error::Error, fs, io};
 
 use csv::{ReaderBuilder, Trim, Writer};
-use processor::Processor;
-use serde::{Deserialize, Serialize};
+use processor::{Processor, Transaction};
+use serde::Serialize;
 
 // We use this type both in the input and for HashMap index so giving it a name may improve readability.
 type ClientId = u16;
-
-// «You can assume the type is a string, the client column is a valid u16 client ID, the tx is a valid u32
-// transaction ID, and the amount is a decimal value with a precision of up to four places past the decimal»
-#[derive(Debug, Deserialize)]
-pub struct Transaction<K> {
-    r#type: Operation,
-    client: K,
-    tx: u32,
-    amount: f64,
-}
 
 // This is only needed for the CSV output
 #[derive(Debug, Serialize)]
@@ -28,16 +18,6 @@ struct ClientOut {
     held: f64,
     total: f64,
     locked: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum Operation {
-    Deposit,
-    Withdrawal,
-    Dispute,
-    Resolve,
-    Chargeback,
 }
 
 fn main() {
