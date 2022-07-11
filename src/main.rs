@@ -79,6 +79,7 @@ mod tests {
         *string = lines.join("\n");
     }
 
+    // Wrap up `process()` a little more to get rid of the all repetitive boilerplate.
     fn run_process(input: &str) -> String {
         let mut result = Vec::new();
         super::process(input.as_bytes(), &mut result).expect("process transactions");

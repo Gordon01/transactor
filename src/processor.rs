@@ -31,7 +31,7 @@ pub struct Client {
     transactions: HashMap<u32, (f64, bool)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     /// Attempted to witraw more funds than _available_. Note that _total_ amount may be higher.
     InsussficientFunds(f64),
@@ -164,5 +164,35 @@ impl<K> Default for Processor<K> {
         Processor {
             clients: HashMap::new(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Error, Operation, Processor, Transaction};
+    type ClientId = u16;
+
+    #[test]
+    fn deposit_wrong_withdraw() {
+        let mut processor: Processor<ClientId> = Default::default();
+        let good: Transaction<ClientId> = Transaction {
+            r#type: Operation::Deposit,
+            client: 1,
+            tx: 1,
+            amount: 100.0,
+        };
+
+        let wrong_amount: Transaction<ClientId> = Transaction {
+            r#type: Operation::Withdrawal,
+            client: 1,
+            tx: 2,
+            amount: 200.0,
+        };
+
+        assert_eq!(Ok(()), processor.process(good));
+        assert_eq!(
+            Err(Error::InsussficientFunds(100.0)),
+            processor.process(wrong_amount)
+        );
     }
 }
