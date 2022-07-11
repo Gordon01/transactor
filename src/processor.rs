@@ -41,6 +41,8 @@ pub enum Error {
     AlreadyDisputed,
     /// Attempted to close or chargeback on a non-disputed transaction.
     NotDisputed,
+    /// Account is locked
+    Locked,
 }
 
 impl Client {
@@ -133,6 +135,11 @@ where
             locked: false,
             transactions: HashMap::new(),
         });
+        // Don't process if account is locked.
+        if client.locked {
+            return Err(Error::Locked);
+        }
+
         match transaction.r#type {
             // `tx` used as a new transaction ID.
             Operation::Deposit => client.deposit(transaction.tx, transaction.amount),
