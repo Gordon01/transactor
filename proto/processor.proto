@@ -1,0 +1,36 @@
+syntax = "proto3";
+package processor;
+
+service Process {
+    rpc Process (Transactions) returns (Accounts);
+}
+
+message Transactions {
+    repeated Transaction transactions = 1;
+}
+
+message Transaction {
+    enum Operation {
+        DEPOSIT = 0;
+        WITHDRAWAL = 1;
+        DISPUTE = 2;
+        RESOLVE = 3;
+        CHARGEBACK = 4;
+    }
+    Operation type = 1;
+    uint32 client = 2;
+    uint32 tx = 3;
+    double amount = 4;
+}
+
+message Accounts {
+    repeated Account accounts = 1;
+}
+
+message Account {
+    uint32 client = 1;
+    double available = 2;
+    double held = 3;
+    double total = 4;
+    bool locked = 5;
+}

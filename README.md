@@ -42,3 +42,13 @@ fn main() {
 ```
 
 Trait `FromIterator<Item = Transaction>` can be easily implemented with this approach.
+
+# As microservice
+With the help of tonic, a `Processor` can be run as a gRPC service with:
+```
+cargo run --bin transactor_grpc
+```
+
+`processor.proto` contains the interface that almost match the CSV format.
+
+<img src="media/gRPC.png">

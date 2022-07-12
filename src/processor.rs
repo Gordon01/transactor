@@ -5,15 +5,15 @@ use serde::Deserialize;
 // transaction ID, and the amount is a decimal value with a precision of up to four places past the decimal»
 #[derive(Debug, Deserialize)]
 pub struct Transaction<K> {
-    r#type: Operation,
-    client: K,
-    tx: u32,
-    amount: f64,
+    pub r#type: Operation,
+    pub client: K,
+    pub tx: u32,
+    pub amount: f64,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum Operation {
+pub enum Operation {
     Deposit,
     Withdrawal,
     Dispute,
