@@ -195,4 +195,24 @@ mod tests {
             processor.process(wrong_amount)
         );
     }
+
+    #[test]
+    fn decimation() {
+        let mut processor: Processor<ClientId> = Default::default();
+        let client = 1;
+
+        for tx in 1..=10000 {
+            let transaction: Transaction<ClientId> = Transaction {
+                r#type: Operation::Deposit,
+                client,
+                tx,
+                amount: 0.0001,
+            };
+
+            let _ = processor.process(transaction);
+        }
+
+        let final_amount = processor.clients().get(&client).unwrap().available;
+        assert_eq!(1.0, final_amount.round());
+    }
 }
