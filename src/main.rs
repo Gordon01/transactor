@@ -48,6 +48,9 @@ pub fn process(reader: impl io::Read, writer: impl io::Write) -> Result<(), Box<
         }
     }
 
+    let iter = rdr.deserialize().map(|result| result.unwrap());
+    let processor = Processor::from_iter(iter);
+
     let mut wtr = Writer::from_writer(writer);
 
     for (&id, client) in processor.clients() {

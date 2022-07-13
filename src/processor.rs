@@ -159,6 +159,21 @@ where
     }
 }
 
+impl<K> FromIterator<Transaction<K>> for Processor<K>
+where
+    K: std::hash::Hash + Eq + std::fmt::Debug,
+{
+    fn from_iter<I: IntoIterator<Item = Transaction<K>>>(iter: I) -> Self {
+        let mut processor: Processor<K> = Default::default();
+
+        for transaction in iter {
+            let _ = processor.process(transaction);
+        }
+
+        processor
+    }
+}
+
 impl<K> Default for Processor<K> {
     fn default() -> Self {
         Processor {
