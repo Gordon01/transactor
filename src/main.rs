@@ -4,6 +4,7 @@ use std::{env, error::Error, fs, io};
 
 use csv::{ReaderBuilder, Trim, Writer};
 use processor::{Processor, Transaction};
+use rust_decimal::prelude::*;
 use serde::Serialize;
 
 // We use this type both in the input and for HashMap index so giving it a name may improve readability.
@@ -14,9 +15,12 @@ type ClientId = u16;
 struct ClientOut {
     #[serde(rename = "client")]
     id: u16,
-    available: f64,
-    held: f64,
-    total: f64,
+    #[serde(with = "rust_decimal::serde::str")]
+    available: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    held: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    total: Decimal,
     locked: bool,
 }
 
@@ -102,8 +106,8 @@ deposit,2,1,300.00
 deposit,2,2,400.00";
         let output = "\
 client,available,held,total,locked
-1,300.0,0.0,300.0,false
-2,700.0,0.0,700.0,false";
+1,300.00,0,300.00,false
+2,700.00,0,700.00,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -117,8 +121,8 @@ deposit,2,1,300.00
 withdrawal,2,2,200.00";
         let output = "\
 client,available,held,total,locked
-1,100.0,0.0,100.0,false
-2,100.0,0.0,100.0,false";
+1,100.00,0,100.00,false
+2,100.00,0,100.00,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -130,7 +134,7 @@ deposit,1,1,100.00
 dispute,1,1,0.00";
         let output = "\
 client,available,held,total,locked
-1,0.0,100.0,100.0,false";
+1,0.00,100.00,100.00,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -142,7 +146,7 @@ deposit,1,1,100.00
 dispute,1,2,0.00";
         let output = "\
 client,available,held,total,locked
-1,100.0,0.0,100.0,false";
+1,100.00,0,100.00,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -155,7 +159,7 @@ dispute,1,1,0.00
 resolve,1,1,0.00";
         let output = "\
 client,available,held,total,locked
-1,100.0,0.0,100.0,false";
+1,100.00,0.00,100.00,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -169,7 +173,7 @@ dispute,1,2,0.00
 chargeback,1,2,0.00";
         let output = "\
 client,available,held,total,locked
-1,100.0,0.0,100.0,true";
+1,100.00,0.00,100.00,true";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -182,7 +186,7 @@ deposit,1,2,200.00
 chargeback,1,2,0.00";
         let output = "\
 client,available,held,total,locked
-1,300.0,0.0,300.0,false";
+1,300.00,0,300.00,false";
         assert_eq!(run_process(transactions), output);
     }
 }

@@ -1,10 +1,11 @@
 mod processor;
 
-use tonic::{transport::Server, Code, Request, Response, Status};
-
 use processor::{Operation, Processor, Transaction};
 use processor_rpc::process_server::{Process, ProcessServer};
 use processor_rpc::{Accounts, Transactions};
+use rust_decimal::prelude::*;
+use tonic::{transport::Server, Code, Request, Response, Status};
+
 type ClientId = u16;
 
 pub mod processor_rpc {
@@ -32,7 +33,7 @@ impl Process for MyProcessor {
                 r#type: operation,
                 client: record.client as u16,
                 tx: record.tx,
-                amount: record.amount,
+                amount: Decimal::from_str(&record.amount).unwrap(),
             };
             // Sorry, errors are not handled here
             let _ = processor.process(transaction);
@@ -43,9 +44,9 @@ impl Process for MyProcessor {
         for (client, client_account) in processor.clients() {
             accounts.push(processor_rpc::Account {
                 client: *client as u32,
-                available: client_account.available,
-                held: client_account.held,
-                total: client_account.total,
+                available: client_account.available.to_string(),
+                held: client_account.held.to_string(),
+                total: client_account.total.to_string(),
                 locked: client_account.locked,
             });
         }
