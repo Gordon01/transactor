@@ -3,12 +3,9 @@ mod processor;
 use std::{env, error::Error, fs, io};
 
 use csv::{ReaderBuilder, Trim, Writer};
-use processor::{Processor, Transaction};
+use processor::Processor;
 use rust_decimal::prelude::*;
 use serde::Serialize;
-
-// We use this type both in the input and for HashMap index so giving it a name may improve readability.
-type ClientId = u16;
 
 // This is only needed for the CSV output
 #[derive(Debug, Serialize)]
@@ -43,14 +40,9 @@ fn main() {
 pub fn process(reader: impl io::Read, writer: impl io::Write) -> Result<(), Box<dyn Error>> {
     // «Whitespaces and decimal precisions (up to four places past the decimal) must be accepted by your program.»
     let mut rdr = ReaderBuilder::new().trim(Trim::All).from_reader(reader);
-
-    let mut processor: Processor<ClientId> = Default::default();
-    for result in rdr.deserialize() {
-        let record: Transaction<ClientId> = result?;
-        if let Err(e) = processor.process(record) {
-            eprintln!("{:?}", e);
-        }
-    }
+    // Deserealization errors are ignored
+    let iter = rdr.deserialize().filter_map(|r| r.ok());
+    let processor = Processor::from_iter(iter);
 
     let mut wtr = Writer::from_writer(writer);
 
