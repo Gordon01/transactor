@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
+use rust_decimal::prelude::*;
 use serde::Deserialize;
+
 // «You can assume the type is a string, the client column is a valid u16 client ID, the tx is a valid u32
 // transaction ID, and the amount is a decimal value with a precision of up to four places past the decimal»
 #[derive(Debug, Deserialize)]
@@ -8,7 +10,8 @@ pub struct Transaction<K> {
     pub r#type: Operation,
     pub client: K,
     pub tx: u32,
-    pub amount: f64,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount: Decimal,
 }
 
 #[derive(Debug, Deserialize)]
@@ -20,21 +23,21 @@ pub enum Operation {
     Resolve,
     Chargeback,
 }
-#[derive(Debug)]
+#[derive(Debug, Default)]
 // We store this in the memory
 pub struct Client {
-    pub available: f64,
-    pub held: f64,
-    pub total: f64,
+    pub available: Decimal,
+    pub held: Decimal,
+    pub total: Decimal,
     pub locked: bool,
     // Here a boolean is used to indicate if transaction is disputed.
-    transactions: HashMap<u32, (f64, bool)>,
+    transactions: HashMap<u32, (Decimal, bool)>,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
     /// Attempted to witraw more funds than _available_. Note that _total_ amount may be higher.
-    InsussficientFunds(f64),
+    InsussficientFunds(Decimal),
     /// No recorded transaction with provided ID found.
     NoTransaction,
     /// Attempted to open a dispute to already disputed transaction.
@@ -46,7 +49,7 @@ pub enum Error {
 }
 
 impl Client {
-    pub fn deposit(&mut self, tx: u32, amount: f64) -> Result<(), Error> {
+    pub fn deposit(&mut self, tx: u32, amount: Decimal) -> Result<(), Error> {
         self.available += amount;
         self.total += amount;
         // By design `tx` can't be the same, but our implementation does not catch this.
@@ -59,7 +62,7 @@ impl Client {
     /// of funds should not change.»
     ///
     /// On error, we also return how much exactly is insufficient just for fun.
-    pub fn withdraw(&mut self, amount: f64) -> Result<(), Error> {
+    pub fn withdraw(&mut self, amount: Decimal) -> Result<(), Error> {
         if self.available < amount {
             return Err(Error::InsussficientFunds(amount - self.available));
         }
@@ -128,13 +131,7 @@ where
     K: std::hash::Hash + Eq + std::fmt::Debug,
 {
     pub fn process(&mut self, transaction: Transaction<K>) -> Result<(), Error> {
-        let client = self.clients.entry(transaction.client).or_insert(Client {
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
-            locked: false,
-            transactions: HashMap::new(),
-        });
+        let client = self.clients.entry(transaction.client).or_default();
         // Don't process if account is locked.
         if client.locked {
             return Err(Error::Locked);
@@ -170,6 +167,8 @@ impl<K> Default for Processor<K> {
 #[cfg(test)]
 mod tests {
     use super::{Error, Operation, Processor, Transaction};
+    use rust_decimal::prelude::*;
+
     type ClientId = u16;
 
     #[test]
@@ -179,20 +178,40 @@ mod tests {
             r#type: Operation::Deposit,
             client: 1,
             tx: 1,
-            amount: 100.0,
+            amount: Decimal::new(100, 0),
         };
 
         let wrong_amount: Transaction<ClientId> = Transaction {
             r#type: Operation::Withdrawal,
             client: 1,
             tx: 2,
-            amount: 200.0,
+            amount: Decimal::new(200, 0),
         };
 
         assert_eq!(Ok(()), processor.process(good));
         assert_eq!(
-            Err(Error::InsussficientFunds(100.0)),
+            Err(Error::InsussficientFunds(Decimal::new(100, 0))),
             processor.process(wrong_amount)
         );
+    }
+
+    #[test]
+    fn decimation() {
+        let mut processor: Processor<ClientId> = Default::default();
+        let client = 1;
+
+        for tx in 1..=10001 {
+            let transaction: Transaction<ClientId> = Transaction {
+                r#type: Operation::Deposit,
+                client,
+                tx,
+                amount: Decimal::new(1, 5),
+            };
+
+            let _ = processor.process(transaction);
+        }
+
+        let final_amount = processor.clients().get(&client).unwrap().available;
+        assert_eq!(Decimal::new(10001, 5), final_amount);
     }
 }

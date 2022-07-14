@@ -14,10 +14,11 @@ path = "src/grpc.rs"
 
 [dependencies]
 csv = "1.1"
-serde = { version = "1", features = ["derive"] }
-tonic = "0.7"
 prost = "0.10"
+rust_decimal = { version = "1.25", features = ["serde-with-str"] }
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tonic = "0.7"
 
 [build-dependencies]
 tonic-build = "0.7"

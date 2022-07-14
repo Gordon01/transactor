@@ -13,12 +13,14 @@ There are two sources of error:
 * from the `Processor` itself, for which an `Error` enum is just debug-printed.
 
 # Data type for the amount
-Here, an f64 used for simplicity. For real finances, a proper decimal number representation is required, like a `rust_decimal` [crate](https://docs.rs/rust_decimal/latest/rust_decimal/).
+I've used a `rust_decimal` [crate](https://docs.rs/rust_decimal/latest/rust_decimal/). It should have 100% precision for four decimal places.
+
+There is a test for it in `processor::tests::decimation`.
 
 # Tests
 Integrational tests are in main.rs file. 
 
-Unit-testing (without CSV processing) is also possible, but only a simple deposit-withdraw example is provided in processor.rs. 
+Unit testing (without CSV processing) is also possible, but only a simple deposit-withdraw example is provided in processor.rs. 
 
 # As library
 The `Proccessor` module is written like a library. It can be used with a different parser or data streams. It does not require for the entire input data loaded into memory.
