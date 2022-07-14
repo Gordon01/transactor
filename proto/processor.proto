@@ -20,7 +20,7 @@ message Transaction {
     Operation type = 1;
     uint32 client = 2;
     uint32 tx = 3;
-    double amount = 4;
+    string amount = 4;
 }
 
 message Accounts {
@@ -29,8 +29,8 @@ message Accounts {
 
 message Account {
     uint32 client = 1;
-    double available = 2;
-    double held = 3;
-    double total = 4;
+    string available = 2;
+    string held = 3;
+    string total = 4;
     bool locked = 5;
 }
