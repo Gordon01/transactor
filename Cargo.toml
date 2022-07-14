@@ -4,21 +4,8 @@ default-run = "transactor"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "transactor"
-path = "src/main.rs"
-
-[[bin]]
-name = "transactor_grpc"
-path = "src/grpc.rs"
-
 [dependencies]
 csv = "1.1"
-prost = "0.10"
 rust_decimal = { version = "1.25", features = ["serde-with-str"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-tonic = "0.7"
-
-[build-dependencies]
-tonic-build = "0.7"

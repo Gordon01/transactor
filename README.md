@@ -53,6 +53,8 @@ let processor = Processor::from_iter(iter);
 ```
 
 # As microservice
+(sorry, only in master branch)
+
 With the help of tonic, a `Processor` can be run as a gRPC service with:
 ```
 cargo run --bin transactor_grpc
