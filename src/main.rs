@@ -39,7 +39,10 @@ fn main() {
 // We accept any type of reader, so a file can be easily replaced with TCP stream as said in the problem description.
 pub fn process(reader: impl io::Read, writer: impl io::Write) -> Result<(), Box<dyn Error>> {
     // «Whitespaces and decimal precisions (up to four places past the decimal) must be accepted by your program.»
-    let mut rdr = ReaderBuilder::new().flexible(true).trim(Trim::All).from_reader(reader);
+    let mut rdr = ReaderBuilder::new()
+        .flexible(true)
+        .trim(Trim::All)
+        .from_reader(reader);
     // Deserealization errors are ignored
     let iter = rdr.deserialize().filter_map(|r| r.ok());
     let processor = Processor::from_iter(iter);

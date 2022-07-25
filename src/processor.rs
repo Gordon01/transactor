@@ -134,7 +134,6 @@ where
     K: std::hash::Hash + Eq + std::fmt::Debug,
 {
     pub fn process(&mut self, transaction: Transaction<K>) -> Result<(), Error> {
-        println!("Processing transaction: {:?}", transaction);
         let client = self.clients.entry(transaction.client).or_default();
         // Don't process if account is locked.
         if client.locked {
