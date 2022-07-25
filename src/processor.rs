@@ -10,8 +10,7 @@ pub struct Transaction<K> {
     pub r#type: Operation,
     pub client: K,
     pub tx: u32,
-    #[serde(with = "rust_decimal::serde::str")]
-    pub amount: Decimal,
+    pub amount: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,6 +45,10 @@ pub enum Error {
     NotDisputed,
     /// Account is locked
     Locked,
+    /// Amount is not specified in operation that reequires it.
+    MissingAmount,
+    /// Unneccessary amount.
+    UnnecessaryAmount,
 }
 
 impl Client {
@@ -131,23 +134,26 @@ where
     K: std::hash::Hash + Eq + std::fmt::Debug,
 {
     pub fn process(&mut self, transaction: Transaction<K>) -> Result<(), Error> {
+        println!("Processing transaction: {:?}", transaction);
         let client = self.clients.entry(transaction.client).or_default();
         // Don't process if account is locked.
         if client.locked {
             return Err(Error::Locked);
         }
 
-        match transaction.r#type {
+        match (transaction.r#type, transaction.amount) {
             // `tx` used as a new transaction ID.
-            Operation::Deposit => client.deposit(transaction.tx, transaction.amount),
+            (Operation::Deposit, Some(amount)) => client.deposit(transaction.tx, amount),
 
             // Unclear how `tx` should used, so just ignore it.
-            Operation::Withdrawal => client.withdraw(transaction.amount),
+            (Operation::Withdrawal, Some(amount)) => client.withdraw(amount),
 
             // `tx` is used as an existing transaction ID.
-            Operation::Dispute => client.dispute(transaction.tx),
-            Operation::Resolve => client.resolve(transaction.tx),
-            Operation::Chargeback => client.chargeback(transaction.tx),
+            (Operation::Dispute, None) => client.dispute(transaction.tx),
+            (Operation::Resolve, None) => client.resolve(transaction.tx),
+            (Operation::Chargeback, None) => client.chargeback(transaction.tx),
+            (_, None) => Err(Error::MissingAmount),
+            (_, Some(_)) => Err(Error::UnnecessaryAmount),
         }
     }
 
@@ -193,14 +199,14 @@ mod tests {
             r#type: Operation::Deposit,
             client: 1,
             tx: 1,
-            amount: Decimal::new(100, 0),
+            amount: Some(Decimal::new(100, 0)),
         };
 
         let wrong_amount: Transaction<ClientId> = Transaction {
             r#type: Operation::Withdrawal,
             client: 1,
             tx: 2,
-            amount: Decimal::new(200, 0),
+            amount: Some(Decimal::new(200, 0)),
         };
 
         assert_eq!(Ok(()), processor.process(good));
@@ -220,7 +226,7 @@ mod tests {
                 r#type: Operation::Deposit,
                 client,
                 tx,
-                amount: Decimal::new(1, 5),
+                amount: Some(Decimal::new(1, 5)),
             };
 
             let _ = processor.process(transaction);

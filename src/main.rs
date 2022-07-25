@@ -39,7 +39,7 @@ fn main() {
 // We accept any type of reader, so a file can be easily replaced with TCP stream as said in the problem description.
 pub fn process(reader: impl io::Read, writer: impl io::Write) -> Result<(), Box<dyn Error>> {
     // «Whitespaces and decimal precisions (up to four places past the decimal) must be accepted by your program.»
-    let mut rdr = ReaderBuilder::new().trim(Trim::All).from_reader(reader);
+    let mut rdr = ReaderBuilder::new().flexible(true).trim(Trim::All).from_reader(reader);
     // Deserealization errors are ignored
     let iter = rdr.deserialize().filter_map(|r| r.ok());
     let processor = Processor::from_iter(iter);
@@ -89,14 +89,14 @@ mod tests {
     fn deposits() {
         let transactions = "\
 type,client,tx,amount
-deposit,1,1,100.00
-deposit,1,2,200.00
-deposit,2,1,300.00
-deposit,2,2,400.00";
+deposit,1,1,100.50
+deposit,1,2,200.05
+deposit,2,1,300.01
+deposit,2,2,400.0001";
         let output = "\
 client,available,held,total,locked
-1,300.00,0,300.00,false
-2,700.00,0,700.00,false";
+1,300.55,0,300.55,false
+2,700.0101,0,700.0101,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -110,8 +110,8 @@ deposit,2,1,300.00
 withdrawal,2,2,200.00";
         let output = "\
 client,available,held,total,locked
-1,100.00,0,100.00,false
-2,100.00,0,100.00,false";
+1,100,0,100,false
+2,100,0,100,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -120,10 +120,10 @@ client,available,held,total,locked
         let transactions = "\
 type,client,tx,amount
 deposit,1,1,100.00
-dispute,1,1,0.00";
+dispute,1,1";
         let output = "\
 client,available,held,total,locked
-1,0.00,100.00,100.00,false";
+1,0,100,100,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -132,10 +132,10 @@ client,available,held,total,locked
         let transactions = "\
 type,client,tx,amount
 deposit,1,1,100.00
-dispute,1,2,0.00";
+dispute,1,2";
         let output = "\
 client,available,held,total,locked
-1,100.00,0,100.00,false";
+1,100,0,100,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -144,11 +144,11 @@ client,available,held,total,locked
         let transactions = "\
 type,client,tx,amount
 deposit,1,1,100.00
-dispute,1,1,0.00
-resolve,1,1,0.00";
+dispute,1,1
+resolve,1,1";
         let output = "\
 client,available,held,total,locked
-1,100.00,0.00,100.00,false";
+1,100,0,100,false";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -158,11 +158,11 @@ client,available,held,total,locked
 type,client,tx,amount
 deposit,1,1,100.00
 deposit,1,2,200.00
-dispute,1,2,0.00
-chargeback,1,2,0.00";
+dispute,1,2
+chargeback,1,2";
         let output = "\
 client,available,held,total,locked
-1,100.00,0.00,100.00,true";
+1,100,0,100,true";
         assert_eq!(run_process(transactions), output);
     }
 
@@ -172,10 +172,10 @@ client,available,held,total,locked
 type,client,tx,amount
 deposit,1,1,100.00
 deposit,1,2,200.00
-chargeback,1,2,0.00";
+chargeback,1,2";
         let output = "\
 client,available,held,total,locked
-1,300.00,0,300.00,false";
+1,300,0,300,false";
         assert_eq!(run_process(transactions), output);
     }
 }
